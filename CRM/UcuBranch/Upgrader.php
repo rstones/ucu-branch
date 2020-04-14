@@ -13,7 +13,7 @@ class CRM_UcuBranch_Upgrader extends CRM_UcuBranch_Upgrader_Base {
    * Example: Run an external SQL script when the module is installed.
    */
   public function install() {
-    $this->executeSqlFile('sql/install.sql');
+    //$this->executeSqlFile('sql/ucu_branch_install.sql');
   }
   
 
@@ -40,7 +40,7 @@ class CRM_UcuBranch_Upgrader extends CRM_UcuBranch_Upgrader_Base {
    * Example: Run an external SQL script when the module is uninstalled.
    */
   public function uninstall() {
-   $this->executeSqlFile('sql/uninstall.sql');
+   //$this->executeSqlFile('sql/ucu_branch_uninstall.sql');
   }
 
   /**
@@ -48,15 +48,14 @@ class CRM_UcuBranch_Upgrader extends CRM_UcuBranch_Upgrader_Base {
    */
   public function enable() {
     //CRM_Core_DAO::executeQuery('UPDATE foo SET is_active = 1 WHERE bar = "whiz"');
-   $this->executeSqlFile('sql/enable.sql');
+   $this->executeSqlFile('sql/ucu_branch_enable.sql');
   }
 
   /**
    * Example: Run a simple query when a module is disabled.
    */
   public function disable() {
-    //CRM_Core_DAO::executeQuery('UPDATE foo SET is_active = 0 WHERE bar = "whiz"');
-   $this->executeSqlFile('sql/disable.sql');
+   $this->executeSqlFile('sql/ucu_branch_disable.sql');
   }
 
   /*

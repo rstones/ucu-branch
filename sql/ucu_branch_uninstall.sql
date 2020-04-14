@@ -7,3 +7,8 @@ update civicrm_contact_type set label = 'Organization' where id = 3;
 
 delete from civicrm_relationship_type where name_a_b in ('Site of', 'Department of', 'Member of');
 update civicrm_relationship_type set is_active = 1;
+
+delete from civicrm_custom_group where name = 'UCU_Branch';
+drop table if exists civicrm_value_ucu_branch_1;
+
+delete from civicrm_option_value where option_group_id = 3 and name = 'Unknown';

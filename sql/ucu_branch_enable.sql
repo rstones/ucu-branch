@@ -7,3 +7,7 @@ update civicrm_contact_type set label = 'Branch' where id =  3;
 
 update civicrm_relationship_type set is_active = 0 where name_a_b not in ('Site of', 'Department of', 'Member of');
 update civicrm_relationship_type set is_active = 1 where name_a_b in ('Site of', 'Department of', 'Member of');
+
+update civicrm_custom_group set is_active = 1 where name = 'UCU_Branch';
+
+update civicrm_option_value set is_active = 1 where option_group_id = 3 and name = 'Unknown';
