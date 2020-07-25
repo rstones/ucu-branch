@@ -11,3 +11,5 @@ update civicrm_relationship_type set is_active = 1 where name_a_b in ('Site of',
 update civicrm_custom_group set is_active = 1 where name = 'UCU_Branch';
 
 update civicrm_option_value set is_active = 1 where option_group_id = 3 and name = 'Unknown';
+
+update civicrm_tag set is_selectable = 1 where name = 'Missing Site/Dept info';

@@ -1,0 +1,15 @@
+#table-search {
+    display: inline-block;
+    margin: 10px;
+}
+
+#email-list-copy-btn {
+    cursor: pointer;
+    display: inline-block;
+    width: 250px;
+    margin: 10px;
+}
+
+#email-list-copy-btn:hover {
+    color: #2786c2;
+}

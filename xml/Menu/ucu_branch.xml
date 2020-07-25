@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/view-members</path>
+    <page_callback>CRM_UcuBranch_Page_ViewMembers</page_callback>
+    <title>ViewMembers</title>
+    <access_arguments>access CiviCRM</access_arguments>
+  </item>
+</menu>

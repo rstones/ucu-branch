@@ -12,3 +12,5 @@ delete from civicrm_custom_group where name = 'UCU_Branch';
 drop table if exists civicrm_value_ucu_branch_1;
 
 delete from civicrm_option_value where option_group_id = 3 and name = 'Unknown';
+
+delete from civicrm_tag where name = 'Missing Site/Dept info';
