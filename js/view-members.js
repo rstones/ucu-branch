@@ -72,7 +72,12 @@
                 let member = memberData[i];
                 // join names
                 member['full_name'] = member['first_name'] + ' ' + member['last_name'];
-                let email = member['emails'][0]['email'];
+                let emails = member['emails'];
+                let email = '';
+                if (emails.length) {
+                    email = emails[emails.length - 1]['email'];
+                }
+                //let email = member['emails'][0]['email'];
                 member['primary_email'] = email;
                 emailString += email + '; ';
 
