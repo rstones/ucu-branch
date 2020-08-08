@@ -325,7 +325,7 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
         // get tags: looking for 'Do not overwrite Dept/Site info' tag
 
         $groups = \Civi\Api4\Group::get()
-                    ->addWhere('group_contacts.id', '=', $contactID)
+                    ->addWhere('group_contacts.contact_id', '=', $contactID)
                     ->execute();
         $memberOfRelID = \Civi\Api4\RelationshipType::get()
                         ->addWhere('name_a_b', '=', 'Member of')
@@ -337,15 +337,41 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
                     ->execute();
         $tags = \Civi\Api4\Tag::get()
                     ->addWhere('entity_tags.entity_table', '=', 'civicrm_contact')
-                    ->addWhere('entity_tags.id', '=', $contactID)
+                    ->addWhere('entity_tags.entity_id', '=', $contactID)
                     ->execute();
 
-        // if no existing data we have a new Member
-        // add tag 'New member'
-        $newMember = empty($groups);
-        if ($newMember) {
-            // new member so tag!
+
+        $groupsArray = (array)$groups;
+        $notAssignedToGroups = empty($groupsArray);
+        if (!$notAssignedToGroups) {
+            // this member already assigned groups so stop processing for now
+            Civi::log()->debug('member already assigned groups so remove tags');
             
+            $tagID = \Civi\Api4\Tag::get()
+                ->addWhere('name', '=', 'Missing Site/Dept info')
+                ->execute()
+                ->first()['id'];
+
+            $tagsArray = (array)$tags;
+            Civi::log()->debug(print_r($tagsArray, 1));
+            $removeTag = false;
+            if (!empty($tagsArray)) {
+                foreach ($tagsArray as $tag) {
+                    if ($tag['id'] == $tagID) {
+                        $removeTag = true;
+                        break;
+                    }
+                }
+            }
+            
+            if ($removeTag) {
+                $results = \Civi\Api4\EntityTag::delete()
+                    ->addWhere('entity_id', '=', $contactID)
+                    ->addWhere('tag_id', '=', $tagID)
+                    ->execute();
+            }
+
+            return;
         }
 
         // then continue and try to determine Site/Dept info, add to groups etc
@@ -369,8 +395,11 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
         $suppAdd3Idx = array_search('supplemental_address_3', $params['fieldHeaders']);
         $suppAdd3 = $params['fields'][$suppAdd3Idx]->_value;
 
-        $workAddIdx = array_search('custom_74', $params['fieldHeaders']);
-        $workAdd = $params['fields'][$workAddIdx]->_value;
+        // I've hard coded the array index (13) in the import mapping here
+        // for work address. Need to make this more robust in case import
+        // mapping changes in the future.
+        //$workAddIdx = array_search('custom_1', $params['fieldHeaders']);
+        $workAdd = $params['fields'][13]->_value;
 
 
         $sites = \Civi\Api4\Contact::get()
@@ -388,24 +417,50 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
                 break;
             }
             // didn't find the site
-        }        
+        }  
+
         if (!$foundSite) {
+            // try looking for IoPPN in address to assign to Denmark Hill
+            $ioppn = 'IoPPN';
+            if ( strstr($workAdd, $ioppn) || strstr($suppAdd1, $ioppn) || strstr($suppAdd2, $ioppn) || strstr($suppAdd3, $ioppn) ) {
+                $siteName = 'Denmark Hill';
+                $foundSite = true;    
+            }
+
+        }
+
+        if (!$foundSite) {
+            
             // if new member tag contact for later attention and return
             // could also infer site from dept though?
             Civi::log()->debug('didnt find the site :(');
             Civi::log()->debug(print_r($workAdd, 1));
             Civi::log()->debug(print_r($suppAdd2, 1));
             Civi::log()->debug(print_r($suppAdd3, 1));
+            
             // tag member for manual follow up
             $tagID = \Civi\Api4\Tag::get()
                 ->addWhere('name', '=', 'Missing Site/Dept info')
                 ->execute()
                 ->first()['id'];
+            
+            $tagsArray = (array)$tags;
+            $missingTagExists = false;
+            if (!empty($tagsArray)) {
+                foreach ($tagsArray as $tag) {
+                    if ($tag['id'] == $tagID) {
+                        $missingTagExists = true;
+                        break;
+                    }
+                }
+            }
 
-            $results = \Civi\Api4\EntityTag::create()
-                ->addValue('entity_id', $contactID)
-                ->addValue('tag_id', $tagID)
-                ->execute();
+            if (!$missingTagExists) {
+                $results = \Civi\Api4\EntityTag::create()
+                    ->addValue('entity_id', $contactID)
+                    ->addValue('tag_id', $tagID)
+                    ->execute();
+            }
 
             return;
 
@@ -420,14 +475,6 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
                         ->addValue('contact_id', $contactID)
                         ->addValue('status', 'Added')
                         ->execute();
-            if ($newMember) {
-                // add to <Site> Members group
-            }/* else if (!$newMember && $siteName . ' Members' not in $groups) {
-                if (!'do not overwrite tag') {
-                    // remove current Members groups
-                    // add to <Site> Members group
-                }
-            } */
         }
 
         // get site id
@@ -469,11 +516,25 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
                 ->addWhere('name', '=', 'Missing Site/Dept info')
                 ->execute()
                 ->first()['id'];
+            
+            $tagsArray = (array)$tags;
+            $missingTagExists = false;
+            if (!empty($tagsArray)) {
+                foreach ($tagsArray as $tag) {
+                    if ($tag['id'] == $tagID) {
+                        $missingTagExists = true;
+                        break;
+                    }
+                }
+            }
 
-            $results = \Civi\Api4\EntityTag::create()
-                ->addValue('entity_id', $contactID)
-                ->addValue('tag_id', $tagID)
-                ->execute();
+            if (!$missingTagExists) {
+                $results = \Civi\Api4\EntityTag::create()
+                    ->addValue('entity_id', $contactID)
+                    ->addValue('tag_id', $tagID)
+                    ->execute();
+            }
+
         } else {
             $groupID = \Civi\Api4\Group::get()
                         ->addWhere('name', '=', $deptName . ' Members')
@@ -484,6 +545,32 @@ function ucu_branch_civicrm_import($object, $usage, &$objectRef, &$params) {
                         ->addValue('contact_id', $contactID)
                         ->addValue('status', 'Added')
                         ->execute();
+
+            Civi::log()->debug(print_r('maybe removing tag', 1));
+            // remove missing tag if it exists
+            $tagID = \Civi\Api4\Tag::get()
+                ->addWhere('name', '=', 'Missing Site/Dept info')
+                ->execute()
+                ->first()['id'];
+
+            $tagsArray = (array)$tags;
+            $removeTag = false;
+            if (!empty($tagsArray)) {
+                foreach ($tagsArray as $tag) {
+                    if ($tag['id'] == $tagID) {
+                        $removeTag = true;
+                        break;
+                    }
+                }
+            }
+            
+            if ($removeTag) {
+                Civi::log()->debug(print_r('removing tag', 1));
+                $results = \Civi\Api4\EntityTag::delete()
+                    ->addWhere('entity_id', '=', $contactID)
+                    ->addWhere('tag_id', '=', $tagID)
+                    ->execute();
+            }
 
         }
 
