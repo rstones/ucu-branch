@@ -3,13 +3,16 @@
     margin: 10px;
 }
 
-#email-list-copy-btn {
-    cursor: pointer;
+#email-list-btns {
     display: inline-block;
-    width: 250px;
-    margin: 10px;
 }
 
-#email-list-copy-btn:hover {
+.email-list-btn {
+    cursor: pointer;
+    display: inline-block;
+    margin: 10px 20px 10px 10px;
+}
+
+.email-list-btn:hover {
     color: #2786c2;
 }
